@@ -63,6 +63,70 @@
 \begin{document}
 \maketitle
 \section{Theory}
+\textbf{1) Consider a panel regression model with units i and time t and unit-level ��xed effects modelled as unit
+dummies Ai that equal one if an observation yit is of unit i and zero otherwise,
+\begin{equation}
+   y_{it} = \beta D_{it} + \Sigma \delta_iA_i + \epsilon_{it}.  
+\end{equation}
+The variable $D_{it}$ is a treatment dummy that equals one if a unit is treated in a given period and zero otherwise. The error term εit is assumed to be i.i.d. Treatment effects $\beta_i$ can vary across units. Assume that the panel is balanced, such that you observe each group $T$ times.
+Show that the estimand for $\beta$ can be written as $\beta = \Sigma(\beta_i × 	\w_i)$, whereby ωi are unit-specific weights i
+\begin{equation}
+    w_i = \cfrac{Var(D_{it}|A_i =1)}{\sigma Var(D_{it}|A_i =1)}
+\end{equation}}
 
+\textbf{2) Now consider a two-way fixed effect model with time and unit fixed effects,
+\begin{equation}
+    y_{it} = \beta D_it + \delta_t +\delta_i +\epsilon_it
+\end{equation}
+
+\textbf{The variable $D_it$ is a treatment dummy that equals one if a unit is treated in a given period and zero otherwise. Units can be treated in different periods. Once a unit gets treated, its treatment status
+remains at $D_it = 1$. Let the within transformation of $D_{it}$ be $\tilda D_it$ = $(D_{it} − \Bar D_i·) − (\Bar D_·t − \Bar D)$.\\
+  a) Consider a comparison of a treated group k, which comprises all units that are treated for a share of Dk < 1 of the sample period and a control group U that never gets treated. Let $n_{kU}$ = $\cfrac{n_k}{(n_k + n_U)}$ 
+  be the relative share of treated units in the 2×2 comparison group $kU$. Show that the variance of the treatment in this 2x2 comparison group is}
+\begin{equation}
+    V(\tilda D_it) = n_{kU}(1-n_{kU})\Bar D_k(1- \Bar D_k)
+\end{equation}
+\textbf{b) Provide an intuitive explanation for the components of the variance: $n_{kU}(1 − n_{kU})$ and $D_k (1 − D_k )$. Given that the variance is directly linked to the weights of the $kU$ group in the estimate $\beta$, explain under what conditions $kU$ gets a large or a small weight.}}\\
+\newpage
+\section{Simulation Exercise}
+\textbf{In the simulation exercise, we study some of the challenges with two-way fixed effect difference-in- difference estimators. Suppose you want to study the effect of a change in state-level minimum wage laws on county-level unemployment. You have 50 states and 20 counties within each state and you observe employment and minimum wages for each year from 1980-2010. In this period, 20 states never change their minimum wages, 15 states raise them in 1990 (early adopters) and another 15 states in 2005 (late adopters). The raises in the minimum wage changes are the same in all the states that choose to have them. This set-up lends itself to a difference-in-difference analysis based on the two-way fixed effect regression
+\begin{equation}\label{eq5}
+    unemp_{it} = \delta_i + \delta_t + \beta^{DD} \1(i,t\geq t^*)+ \epsilon_it
+\end{equation}
+For each state $i$, the treatment indicator $1(i, t \geq t^∗ )$ equals unity in all years from the year the minimum wage was changed $(t^∗)$. In three separate sets of simulations (500 replications each), consider data- generating processes that give you an approximate ATT of 5 percentage points:}\\
+\textbf{1. Before and after the change in the minimum wage, unemployment levels follow the same flat trend, but the level of unemployment goes up by 5 percentage points relative to base level after the increase in the minimum wage (i.e. you see a level shift in the unemployment rate)}\\
+\textbf{2. Before and after the change in the minimum wage, unemployment levels follow the same flat trend. The unemployment level goes up by 2.5 percentage points for the early adopters and 7.5 percent for the late adopters.}\\
+\textbf{3. Before the minimum wage change, unemployment levels follow the sameflat trend. However, once the minimum wage changes, unemployment levels increase relative to the pre-trend by 0.25 percentage points per year.}
+Suppose you want to use Equation \ref{eq5} to estimate the ATT. For each set of simulations, plot the distribution of estimates against a benchmark of 5 percentage points (note: 5 percentage points is an approximate benchmark; if you find a more suitable one, please go ahead) and compare the performance of the two- way fixed effect estimator across the three data-generating processes. Explain intuitively why the results differ from the benchmark or not.
+\newpage
+\section{Empirical Exercise}
+
+Even after forty years of empirical research there is inconclusive evidence on the economic effects of minimum wages. Newly available datasets and more refined research designs suggest that the effects of a raise in the minimum wage are more subtle than suggested by a simple supply-and-demand-model of a labor market. In this problem set, we look at the impact of the minimum wage on firm profits.\\
+We have a firm-level panel dataset spanning the years 1994-2002. In late 1999, a newly elected government introduced a minimum wage. In absence of an obvious control group, a researcher compares the profits of firms with high and low average wages over time. The dataset contains the following variables:\\
+$ln_avwage$ log average annual wage paid to worker\\
+$net_pcm$ net pro��t to sales ratio\\
+$regno$ firm registration number\\
+$year$ \\
+$post$ a dummy 1(year > 1999)\\ 
+$lowwage$ a dummy if ��rm is a low-wage firm in 1994\\
+$sic2$ 2-digit industry code\\
+1) Estimate the simplest possible di��erence-in-di��erence regressions (indicators: ��rm i, year t), namely
+\begin{equation}\label{eq7}
+    y_it = \beta_0 + \beta_1lowwage_i + \beta_2post_t + \beta_3lowwage_i * post_t + \epsilon_it
+\end{equation}
+with outcomes being $ln_avwage$ and $net_pcm$ . For each outcome, present the results in table similar to Figure 1. It is sufficient to report standard errors for the difference-in-difference estimate. Explain the identifying assumption that are necessary for a causal interpretation and interpret the results.
+ 
+
+\textbf{2) Discuss statistical inference in the above regression. What are the assumptions underlying the calculation of standard errors? Are these valid in this setting? If no, provide estimates for appropriately corrected standard errors of $\beta_3$}\\
+  
+\textbf{3) Estimate the following diff-in-diff regression with firm fixed effects (δi) and year fixed effects $(\delta_t$) for
+both outcomes:}
+\begin{equation}
+    y_{it} = \beta_0 + \beta_1lowwage_i * post_t + \delta_i + \delta_t + \epsilon_{it}
+\end{equation}
+\textbf{Cluster the standard errors at the firm level. Interpret the results and compare them to the regression in 2)}.\\
+
+
+\textbf{4) Re-estimate Equation \ref{eq7} in two sets of regressions: i) replace the year fixed effects with industry- specific time trends; ii) replace the year fixed effects with firm-specific time trends. In both cases, cluster the standard errors at the firm level. Interpret your results and discuss what they imply for the common trends assumption.}
 
 \end{document}
