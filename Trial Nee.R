@@ -20,13 +20,20 @@ did3<-lm(ln_avwage~lwpost+time+regno, data = data)
 summary(did3)
 install.packages("plm")
 library(plm)
+install.packages("lmtest")
+library(lmtest)
+install.packages("sos")
+library(sos)
+findFunction("coeftest")
 trial <- plm(ln_avwage ~ lwpost+time+regno, 
                     data = data,
                     index = c("regno", "year"), 
                     model = "within")
-summary(trial)
+coeftest(trial, vcov =vcovHC(trial, type = "sss", cluster = "regno"))
 trial2 <- plm(net_pcm ~ lwpost+time+regno, 
              data = data,
              index = c("regno", "year"), 
              model = "within")
 summary(trial2)
+install.packages("lfe")
+library(lfe)
