@@ -2,10 +2,11 @@ rm(list=ls())
 
 library(sandwich)
 library(lmtest)
+library(ggplot2)
 
 setwd("~/Econ/03 PhD in IRE/2nd in 1/Econometrics II/Ass/problem set 5")
 
-beta = matrix(NA, 3, 500)
+beta = matrix(NA, 500, 3)
 
 for (k in 1:500) {
 
@@ -51,15 +52,47 @@ A$D = ifelse(A$G1*A$T1==1|A$G2*A$T2==1, 1,0)
 #Defining the Y for each model
 A$unemp1=A$unemp0+A$D_early*5+A$D_late*5
 A$unemp2=A$unemp0+A$D_early*2.5+A$D_late*7.5
-A$unemp3=A$unemp0+A$D_early*(A$year-1989)+A$D_late*(A$year-2005)
+A$unemp3=A$unemp0+A$D_early*(A$year-1989)+A$D_late*(A$year-2004)
 
 A$state_name = as.factor(A$state_name)
+
+reg1 = lm(unemp1~D, data = A)
+reg2 = lm(unemp2~D, data = A)
+reg3 = lm(unemp3~D*year, data = A)
+
+beta[k,1]=coef(reg1)[2]
+beta[k,2]=coef(reg2)[2]
+beta[k,3]=coef(reg3)[3]
+}
 
 reg1 = lm(unemp1~D+state_name+as.factor(year), data = A)
 reg2 = lm(unemp2~D+state_name+as.factor(year), data = A)
 reg3 = lm(unemp3~D*year+as.factor(year)+state_name, data = A)
 
-beta[1,k]=coef(reg1)[2]
-beta[2,k]=coef(reg2)[2]
-beta[3,k]=coef(reg3)[83]
-}
+b = as.vector(3)
+b[1]=coef(reg1)[2]
+b[2]=coef(reg2)[2]
+b[3]=coef(reg3)[83]
+
+beta = as.data.frame(beta)
+
+ggplot(beta, aes(x=V1))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[1], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "First specification")
+
+ggplot(beta, aes(x=V2))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[2], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "Second specification")
+
+ggplot(beta, aes(x=V3))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[3], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "Third specification")
+
+
+
