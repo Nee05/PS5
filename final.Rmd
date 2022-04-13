@@ -107,12 +107,11 @@ ggplot(beta, aes(x=V3))+
   labs(x="Distribution of the beta", y="Frequency", title = "Third specification")
 
 ```
+
 ```{r}
-library(haven)
+
 library(stargazer)
 library(plm)
-library(lmtest)
-library(sandwich)
 library(lfe)
 library(sos)
 
