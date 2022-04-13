@@ -3,6 +3,7 @@ rm(list=ls())
 library(sandwich)
 library(lmtest)
 library(ggplot2)
+library(sets)
 
 setwd("~/Econ/03 PhD in IRE/2nd in 1/Econometrics II/Ass/problem set 5")
 
@@ -39,6 +40,10 @@ A$unemp0 = as.numeric(A$unemp0)
 A$state_name = as.numeric(A$state_name)
 A$county_name = as.numeric(A$county_name)
 
+#Create some noise
+
+A$unemp0 = A$unemp0 + rnorm(length(A$unemp0))
+
 #Defining the treatment groups and the treatment periods
 A$G1 = ifelse(A$state_name<=15 , 1, 0)
 A$G2 = ifelse(A$state_name>15&A$state_name<=30, 1, 0)
@@ -56,41 +61,34 @@ A$unemp3=A$unemp0+A$D_early*(A$year-1989)+A$D_late*(A$year-2004)
 
 A$state_name = as.factor(A$state_name)
 
-reg1 = lm(unemp1~D, data = A)
-reg2 = lm(unemp2~D, data = A)
-reg3 = lm(unemp3~D*year, data = A)
-
-beta[k,1]=coef(reg1)[2]
-beta[k,2]=coef(reg2)[2]
-beta[k,3]=coef(reg3)[3]
-}
-
 reg1 = lm(unemp1~D+state_name+as.factor(year), data = A)
 reg2 = lm(unemp2~D+state_name+as.factor(year), data = A)
 reg3 = lm(unemp3~D*year+as.factor(year)+state_name, data = A)
 
-b = as.vector(3)
-b[1]=coef(reg1)[2]
-b[2]=coef(reg2)[2]
-b[3]=coef(reg3)[83]
+beta[k,1]=coef(reg1)[2]
+beta[k,2]=coef(reg2)[2]
+beta[k,3]=coef(reg3)[83]
+}
+
+rm(list = setdiff(ls(), "beta"))
 
 beta = as.data.frame(beta)
 
 ggplot(beta, aes(x=V1))+
   geom_histogram(fill="white", color="black")+
-  geom_vline(xintercept = b[1], size=1, color="red")+
+  geom_vline(xintercept = mean(beta$V1), size=1, color="red")+
   theme_classic()+
   labs(x="Distribution of the beta", y="Frequency", title = "First specification")
 
 ggplot(beta, aes(x=V2))+
   geom_histogram(fill="white", color="black")+
-  geom_vline(xintercept = b[2], size=1, color="red")+
+  geom_vline(xintercept = mean(beta$V2), size=1, color="red")+
   theme_classic()+
   labs(x="Distribution of the beta", y="Frequency", title = "Second specification")
 
 ggplot(beta, aes(x=V3))+
   geom_histogram(fill="white", color="black")+
-  geom_vline(xintercept = b[3], size=1, color="red")+
+  geom_vline(xintercept = mean(beta$V3), size=1, color="red")+
   theme_classic()+
   labs(x="Distribution of the beta", y="Frequency", title = "Third specification")
 
