@@ -1,0 +1,213 @@
+---
+title: "Untitled"
+author: "Kun, Giacomo, Neeharika, Francesca and Noor"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+
+```{r}
+rm(list=ls())
+library(sandwich)
+library(lmtest)
+library(ggplot2)
+library(haven)
+library(stargazer)
+library(plm)
+library(lfe)
+library(sos)
+```
+
+```{r}
+beta = matrix(NA, 500, 3)
+
+for (k in 1:500) {
+  
+  #generate state level unemp mean
+  state <- rnorm(50, 6, 2)
+  
+  #generate state level unemp sds
+  stva <- abs(rnorm(50, 1, 1/2))
+  
+  # Setting the initial level of unemployment for each county in 1980 such that every state
+  #is a cluster of correlated counties
+  A <- matrix(cbind(rep(1980, 20), seq(1:20), rep(paste(1),20), rnorm(20, state[1], stva[1])), 20, 4)
+  for (i in 2:50){
+    unemp0 <- rnorm(20, state[i], stva[i])
+    state_name <- rep(paste(i),20)
+    county_name = seq((20*(i-1)+1),(20*i))
+    c <- cbind("year"=rep(1980, 20), county_name, state_name,unemp0)
+    A <- rbind(A,c)
+  }
+   #Transforming the cross-sectional in a panel
+  for(i in 1981:2010){
+    B = cbind(rep(i,1000), seq(1:1000), A[1:1000,3], A[1:1000,4])
+    A=rbind(A,B)
+  }
+  
+  A = as.data.frame(A)
+  A$year = as.numeric(A$year)
+  A$unemp0 = as.numeric(A$unemp0)
+  A$state_name = as.numeric(A$state_name)
+  A$county_name = as.numeric(A$county_name)
+  
+  #Defining the treatment groups and the treatment periods
+  A$G1 = ifelse(A$state_name<=15 , 1, 0)
+  A$G2 = ifelse(A$state_name>15&A$state_name<=30, 1, 0)
+  A$T1 = ifelse(A$year>=1990, 1, 0)
+  A$T2 = ifelse(A$year>=2005, 1, 0)
+  
+  A$D_early = A$G1*A$T1
+  A$D_late = A$G2*A$T2
+  A$D = ifelse(A$G1*A$T1==1|A$G2*A$T2==1, 1,0)
+  
+  #Defining the Y for each model
+  A$unemp1=A$unemp0+A$D_early*5+A$D_late*5
+  A$unemp2=A$unemp0+A$D_early*2.5+A$D_late*7.5
+  A$unemp3=A$unemp0+A$D_early*(A$year-1989)+A$D_late*(A$year-2004)
+  
+  A$state_name = as.factor(A$state_name)
+  
+  reg1 = lm(unemp1~D, data = A)
+  reg2 = lm(unemp2~D, data = A)
+  reg3 = lm(unemp3~D*year, data = A)
+  
+  beta[k,1]=coef(reg1)[2]
+  beta[k,2]=coef(reg2)[2]
+  beta[k,3]=coef(reg3)[3]
+}
+
+reg1 = lm(unemp1~D+state_name+as.factor(year), data = A)
+reg2 = lm(unemp2~D+state_name+as.factor(year), data = A)
+reg3 = lm(unemp3~D*year+as.factor(year)+state_name, data = A)
+
+b = as.vector(3)
+b[1]=coef(reg1)[2]
+b[2]=coef(reg2)[2]
+b[3]=coef(reg3)[83]
+
+beta = as.data.frame(beta)
+```
+
+```{r}
+ggplot(beta, aes(x=V1))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[1], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "First specification")
+
+ggplot(beta, aes(x=V2))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[2], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "Second specification")
+
+ggplot(beta, aes(x=V3))+
+  geom_histogram(fill="white", color="black")+
+  geom_vline(xintercept = b[3], size=1, color="red")+
+  theme_classic()+
+  labs(x="Distribution of the beta", y="Frequency", title = "Third specification")
+```
+
+```{r}
+library(haven)
+data<- read_dta("data_ps5.dta")
+
+
+#checking for missing values
+table(is.na(data))
+
+#3.1.a
+#we need to create lowage*post variable - lwpost 
+data$lwpost<-data$lowwage*data$post
+#for this outcome varibale is ln_avwage
+did1A<-lm(ln_avwage~lowwage, data = data)
+did1B<-lm(ln_avwage~post, data = data)
+did1C<-lm(ln_avwage~lowwage+post+lwpost, data = data)
+summary(did1A)
+summary(did1B)
+summary(did1C)
+
+#3.1.b outcome var is net_pcm
+did2A<-lm(net_pcm~lowwage, data = data)
+did2B<-lm(net_pcm~post, data = data)
+did2C<-lm(net_pcm~lowwage+post+lwpost, data = data)
+summary(did2A)
+summary(did2B)
+summary(did2C)
+stargazer(did1C, did2C, type="text")
+stargazer(did1C, did2C, type="latex")
+
+#3.2
+
+SE1 = coeftest(did1C, vcov. = vcovCL, cluster = ~regno )
+SE2 = coeftest(did2C, vcov. = vcovCL, cluster = ~regno )
+
+Pre_tr1 = sqrt(SE1[1,2]^2+SE1[2,2]^2)
+Pre_tr_t1 =(SE1[1,1]+SE1[2,1])/Pre_tr1
+Post_c1 = sqrt(SE1[1,2]^2+SE1[3,2]^2)
+Post_c_t1 =(SE1[1,1]+SE1[3,1])/Post_c1
+
+Post_tr1 =  sqrt(SE1[1,2]^2+SE1[2,2]^2+SE1[3,2]^2+SE1[4,2]^2)
+Post_tr_t1 =(SE1[1,1]+SE1[2,1]+SE1[3,1]+SE1[4,1])/Post_tr1
+
+diff_G1 = sqrt(Post_c1^2+Post_tr1^2)
+diff_P1 = sqrt(Pre_tr1^2+Post_tr1^2)
+
+Pre_tr2 = sqrt(SE2[1,2]^2+SE2[2,2]^2)
+Pre_tr_t2 =(SE2[1,1]+SE2[2,1])/Pre_tr2
+Post_c2 = sqrt(SE2[1,2]^2+SE2[3,2]^2)
+Post_c_t2 =(SE2[1,1]+SE2[3,1])/Post_c2
+
+Post_tr2 =  sqrt(SE2[1,2]^2+SE2[2,2]^2+SE2[3,2]^2+SE2[4,2]^2)
+Post_tr_t2 =(SE2[1,1]+SE2[2,1]+SE2[3,1]-SE2[4,1])/Post_tr2
+
+diff_G2 = sqrt(Post_c2^2+Post_tr2^2)
+diff_P2 = sqrt(Pre_tr2^2+Post_tr2^2)
+
+#3.3
+# we need the time varibale - the year in which treatment has begun in our case 1999
+
+did3<-lm(ln_avwage~lwpost+as.factor(year)+regno, data = data)
+Clust_se_did3 = coeftest(did3, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(did3, Clust_se_did3, keep = c("lwpost"), type = "text")
+stargazer(did3, Clust_se_did3, keep = c("lwpost"), type = "latex")
+
+did3A<-lm(net_pcm~lwpost+as.factor(year)+regno, data = data)
+Clust_se_did3A = coeftest(did3A, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(did3A, Clust_se_did3A, keep = c("lwpost"), type = "text")
+stargazer(did3A, Clust_se_did3A, keep = c("lwpost"), type = "latex")
+
+
+#3.4
+
+#ind specific time trend
+trial3 <- lm(ln_avwage~lwpost+year*as.factor(sic2), data = data)
+Clust_se_trial3 = coeftest(trial3, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(trial3, Clust_se_trial3, keep = c("lwpost"), type = "text")
+stargazer(trial3, Clust_se_trial3, keep = c("lwpost"), type = "latex")
+
+trial3A <- lm(net_pcm~lwpost+year*as.factor(sic2), data = data)
+Clust_se_trial3A = coeftest(trial3A, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(trial3A, Clust_se_trial3A, keep = c("lwpost"), type = "text")
+stargazer(trial3A, Clust_se_trial3A, keep = c("lwpost"), type = "latex")
+
+
+#firm specific time trend
+trial4 <- lm(ln_avwage~lwpost+year*regno, data = data)
+Clust_se_trial4=coeftest(trial4, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(trial4, Clust_se_trial4, keep = c("lwpost"), type = "text")
+stargazer(trial4, Clust_se_trial4, keep = c("lwpost"), type = "latex")
+
+trial4A <- lm(net_pcm~lwpost+year*regno, data = data)
+Clust_se_trial4A=coeftest(trial4A, vcov. = vcovCL, cluster = ~regno )
+
+stargazer(trial4A, Clust_se_trial4A, keep = c("lwpost"), type = "text")
+stargazer(trial4A, Clust_se_trial4A, keep = c("lwpost"), type = "latex")
+
+```
